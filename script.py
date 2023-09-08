@@ -96,7 +96,7 @@ def input_modifier(string):
     This function is applied to your text inputs before
     they are fed into the model.
     """
-    if not params['activate']:
+    if not params['activate'] or string == "":
         return string
 
     return ts.translate_text(string, translator=params['translator string'], from_language='auto', to_language='en')
