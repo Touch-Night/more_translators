@@ -110,7 +110,7 @@ def output_modifier(string):
         return string
     translated_str = ts.translate_text(html.unescape(string), translator=params['translator string'],
                              from_language='en', to_language=params['language string'])
-    return html.escape(translated_str)
+    return translated_str
 
 
 def bot_prefix_modifier(string):
