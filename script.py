@@ -1,6 +1,9 @@
 import html
 import gradio as gr
 import translators as ts
+import os
+import re
+import uuid
 
 params = {
     "activate": True,
@@ -91,6 +94,25 @@ language_codes = {'自动检测': 'auto', '中文(简体)': 'zh-CHS', '英语': 
                   '扎扎其语': 'zaz', '祖鲁语': 'zul', '巽他语': 'sun', '苗语': 'hmn', '塞尔维亚语(西里尔文)': 'src'}
 
 
+def modify_string(string, selected_translator, source, target):
+    """
+    Copied from https://github.com/oobabooga/text-generation-webui/pull/3111/files.
+    This Implements Non-Translation of Code Blocks.
+    """
+    pattern = re.compile(r'```(.*?)\n(.*?)```', re.DOTALL)
+    blocks = [(str(uuid.uuid4()), m.group(1), m.group(2)) for m in re.finditer(pattern, string)]
+    string_without_blocks = string
+    for uuid_str, _, _ in blocks:
+        string_without_blocks = re.sub(pattern, uuid_str, string_without_blocks, count=1)
+    translated_str = ts.translate_text(html.unescape(string), translator=selected_translator,
+                                       from_language=source, to_language=target)
+    for uuid_str, lang, block in blocks:
+        # Remove leading and trailing whitespaces from each block
+        block = block.strip()
+        translated_str = translated_str.replace(uuid_str, '```' + lang + '\n' + block + '\n```')
+    return translated_str
+
+
 def input_modifier(string):
     """
     This function is applied to your text inputs before
@@ -99,7 +121,7 @@ def input_modifier(string):
     if not params['activate'] or string == "":
         return string
 
-    return ts.translate_text(string, translator=params['translator string'], from_language='auto', to_language='en')
+    return modify_string(string, params['translator string'], 'auto', 'en')
 
 
 def output_modifier(string):
@@ -108,8 +130,7 @@ def output_modifier(string):
     """
     if not params['activate']:
         return string
-    translated_str = ts.translate_text(html.unescape(string), translator=params['translator string'],
-                             from_language='en', to_language=params['language string'])
+    translated_str = modify_string(html.unescape(string), params['translator string'], 'en', params['language string'])
     return translated_str
 
 
@@ -124,6 +145,8 @@ def bot_prefix_modifier(string):
 
 
 def ui():
+    params['language string'] = read_language_code()
+
     # Finding the language and translator name from the language and translator code to use as the default value
     language_name = list(language_codes.keys())[list(language_codes.values()).index(params['language string'])]
     translator_name = list(translator_codes.keys())[list(translator_codes.values()).index(params['translator string'])]
@@ -142,4 +165,32 @@ def ui():
     # Event functions to update the parameters in the backend
     activate.change(lambda x: params.update({"activate": x}), activate, None)
     translator.change(lambda x: params.update({"translator string": translator_codes[x]}), translator, None)
-    language.change(lambda x: params.update({"language string": language_codes[x]}), language, None)
+    language.change(lambda x: (
+    new_language_code := language_codes[x], params.update({"language string": new_language_code}),
+    write_language_code(new_language_code)), language, None)
+
+
+def read_language_code(filename="setting/latest_use_language.txt"):
+    """
+    Copied from https://github.com/oobabooga/text-generation-webui/pull/3111/files
+    """
+    try:
+        with open(filename, "r") as file:
+            language_code = file.read().strip()
+        return language_code
+    except FileNotFoundError:
+        print(f"Cannot find the file {filename}. Using zh-CHS instead")
+        return 'zh-CHS'
+
+
+def write_language_code(language_code, filename="setting/latest_use_language.txt"):
+    """
+        Copied from https://github.com/oobabooga/text-generation-webui/pull/3111/files
+    """
+    # Check if the directory exists, if not, create it
+    directory = os.path.dirname(filename)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    with open(filename, "w") as file:
+        file.write(language_code)
