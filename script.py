@@ -11,37 +11,37 @@ params = {
     "translator string": "alibaba",
 }
 
-translator_codes = {'* 小牛翻译': 'niutrans',
-                    '* MyMemory': 'mymemory',
+translator_codes = {'小牛翻译': 'niutrans',
+                    'MyMemory': 'mymemory',
                     '阿里翻译': 'alibaba',
                     '百度翻译': 'baidu',
-                    '* ModernMt': 'modernmt',
-                    '* 火山翻译': 'volcengine',
+                    'ModernMt': 'modernmt',
+                    '火山翻译': 'volcengine',
                     '爱词霸翻译': 'iciba',
-                    '* 讯飞翻译': 'iflytek',
-                    '* Google翻译': 'google',
+                    '讯飞翻译': 'iflytek',
+                    'Google翻译': 'google',
                     'Bing翻译': 'bing',
                     'Lingvanex': 'lingvanex',
                     'Yandex': 'yandex',
                     'iTranslate': 'itranslate',
-                    '* SysTran': 'systran',
+                    'SysTran': 'systran',
                     'Apertium': 'apertium',
                     'Reverso': 'reverso',
-                    '* DeepL': 'deepl',
-                    '* 云译翻译': 'cloudtranslation',
-                    '* 腾讯交互翻译': 'qqtransmart',
-                    '* TranslateCom': 'translatecom',
+                    'DeepL': 'deepl',
+                    '云译翻译': 'cloudtranslation',
+                    '腾讯交互翻译': 'qqtransmart',
+                    'TranslateCom': 'translatecom',
                     '搜狗翻译': 'sogou',
-                    '* Tilde': 'tilde',
-                    '* 腾讯翻译君': 'qqfanyi',
+                    'Tilde': 'tilde',
+                    '腾讯翻译君': 'qqfanyi',
                     'Argos': 'argos',
-                    '* TranslateMe': 'translateme',
+                    'TranslateMe': 'translateme',
                     'Papago': 'papago',
-                    '* Mirai Translate': 'mirai',
+                    'Mirai Translate': 'mirai',
                     '有道翻译': 'youdao',
                     '讯飞听见翻译': 'iflyrec',
-                    '* YEEKIT': 'yeekit',
-                    '* LanguageWire': 'languagewire',
+                    'YEEKIT': 'yeekit',
+                    'LanguageWire': 'languagewire',
                     '彩云小译': 'caiyun',
                     'Elia': 'elia',
                     'Judic': 'judic',
@@ -160,7 +160,7 @@ def ui():
 
     with gr.Row():
         translator = gr.Dropdown(value=translator_name, choices=[k for k in translator_codes],
-                                 label='翻译器（带*号的可能无法正常使用）')
+                                 label='翻译器')
 
     # Event functions to update the parameters in the backend
     activate.change(lambda x: params.update({"activate": x}), activate, None)
@@ -179,7 +179,7 @@ def read_language_code(filename="setting/latest_use_language.txt"):
             language_code = file.read().strip()
         return language_code
     except FileNotFoundError:
-        print(f"Cannot find the file {filename}. Using zh-CHS instead")
+        print(f"找不到{filename}。故使用默认的中文。")
         return 'zh-CHS'
 
 
