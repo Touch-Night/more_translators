@@ -5,10 +5,12 @@ import os
 import re
 import uuid
 import pandas as pd
+import yaml
 
 i18n_data = pd.read_csv(
     "./extensions/more_translators/i18n.csv", encoding="utf-8", header=0, index_col=0
 )
+
 supported_language_map_data = pd.read_csv(
     "./extensions/more_translators/supported_language_map.csv",
     encoding="utf-8",
@@ -16,9 +18,39 @@ supported_language_map_data = pd.read_csv(
     index_col=0,
 )
 
+# default settings
+settings = {
+    "activate": True,
+    "user lang": "zh",  # todo
+    "llm lang": "en",  # todo
+    "i18n lang": "zh-cn",
+    "translator string": "alibaba",
+    "translate mode": "to-from",  # todo, to-from, to, from
+}
+
+# Update settings from settings.yaml
+def load_settings():
+    settings_dir = "./extensions/more_translators/settings.yaml"
+    if os.path.exists(settings_dir):
+        with open(settings_dir, "r") as file:
+            settings.update(yaml.load(file, Loader=yaml.FullLoader))
+    else:
+        save_settings()
+        print("未找到设置文件settings.yaml，已按默认设置创建。")
+
+# Save settings to settings.yaml when settings is modified
+def save_settings():
+    settings_dir = "./extensions/more_translators/settings.yaml"
+    # Check if the directory exists, if not, create it
+    if not os.path.exists(os.path.dirname(settings_dir)):
+        os.makedirs(os.path.dirname(settings_dir))
+    # Save settings to settings.yaml
+    with open(settings_dir, "w") as file:
+        yaml.dump(settings, file)
+
 
 # Translate from i18n.csv to translator_codes and language_codes
-def read_i18n(i18n_value, i18n_lang):
+def read_i18n(i18n_value, i18n_lang=settings["i18n lang"]):
     if i18n_value not in i18n_data.index or i18n_lang not in i18n_data.columns:
         return i18n_value
     return i18n_data.loc[i18n_value, i18n_lang]
@@ -29,7 +61,7 @@ def value_to_language_code(value, translator):
         value not in supported_language_map_data.index
         or translator not in supported_language_map_data.columns
     ):
-        raise ValueError("value or translator is not in supported_language_map_data")
+        gr.Warning(read_i18n("不支持的语言或翻译器"))
     return supported_language_map_data.loc[value, translator]
 
 
@@ -51,42 +83,35 @@ def get_languages(translator):
     result = dict(zip(all_languages.index, all_languages[translator]))
     return result
 
-
-params = {
-    "activate": True,
-    "user lang": "zh",  # todo
-    "target lang": "en",  # todo
-    "i18n lang": "zh-cn",
-    "translator string": "alibaba",
-}
+load_settings()
 
 translator_codes = {
-    read_i18n("alibaba", params["i18n lang"]): "alibaba",
-    read_i18n("apertium", params["i18n lang"]): "apertium",
-    read_i18n("argos", params["i18n lang"]): "argos",
-    read_i18n("baidu", params["i18n lang"]): "baidu",
-    read_i18n("bing", params["i18n lang"]): "bing",
-    read_i18n("caiyun", params["i18n lang"]): "caiyun",
-    read_i18n("cloudTranslation", params["i18n lang"]): "cloudTranslation",
-    read_i18n("deepl", params["i18n lang"]): "deepl",
-    read_i18n("elia", params["i18n lang"]): "elia",
-    read_i18n("google", params["i18n lang"]): "google",
-    read_i18n("iflyrec", params["i18n lang"]): "iflyrec",
-    read_i18n("itranslate", params["i18n lang"]): "itranslate",
-    read_i18n("languageWire", params["i18n lang"]): "languageWire",
-    read_i18n("lingvanex", params["i18n lang"]): "lingvanex",
-    read_i18n("mglip", params["i18n lang"]): "mglip",
-    read_i18n("modernMt", params["i18n lang"]): "modernMt",
-    read_i18n("papago", params["i18n lang"]): "papago",
-    read_i18n("qqFanyi", params["i18n lang"]): "qqFanyi",
-    read_i18n("qqTranSmart", params["i18n lang"]): "qqTranSmart",
-    read_i18n("reverso", params["i18n lang"]): "reverso",
-    read_i18n("sogou", params["i18n lang"]): "sogou",
-    read_i18n("translateCom", params["i18n lang"]): "translateCom",
-    read_i18n("utibet", params["i18n lang"]): "utibet",
+    read_i18n("alibaba"): "alibaba",
+    read_i18n("apertium"): "apertium",
+    read_i18n("argos"): "argos",
+    read_i18n("baidu"): "baidu",
+    read_i18n("bing"): "bing",
+    read_i18n("caiyun"): "caiyun",
+    read_i18n("cloudTranslation"): "cloudTranslation",
+    read_i18n("deepl"): "deepl",
+    read_i18n("elia"): "elia",
+    read_i18n("google"): "google",
+    read_i18n("iflyrec"): "iflyrec",
+    read_i18n("itranslate"): "itranslate",
+    read_i18n("languageWire"): "languageWire",
+    read_i18n("lingvanex"): "lingvanex",
+    read_i18n("mglip"): "mglip",
+    read_i18n("modernMt"): "modernMt",
+    read_i18n("papago"): "papago",
+    read_i18n("qqFanyi"): "qqFanyi",
+    read_i18n("qqTranSmart"): "qqTranSmart",
+    read_i18n("reverso"): "reverso",
+    read_i18n("sogou"): "sogou",
+    read_i18n("translateCom"): "translateCom",
+    read_i18n("utibet"): "utibet",
 }
 
-language_codes = get_languages(params["translator string"])
+language_codes = get_languages(settings["translator string"])
 
 
 def modify_string(string, selected_translator, source, target):
@@ -116,37 +141,37 @@ def modify_string(string, selected_translator, source, target):
 
 
 def input_modifier(string):
-    if not params["activate"] or string == "":
+    if not settings["activate"] or string == "":
         return string
-    return modify_string(string, params["translator string"], "auto", "en")
+    return modify_string(
+        string, settings["translator string"], "auto", settings["llm lang"]
+    )
 
 
 def output_modifier(string):
-    if not params["activate"]:
+    if not settings["activate"]:
         return string
     translated_str = modify_string(
         html.unescape(string),
-        params["translator string"],
-        "en",
-        params["user lang"],
+        settings["translator string"],
+        settings["llm lang"],
+        settings["user lang"],
     )
     return translated_str
 
 
 def ui():
-    params["user lang"] = read_language_code()
-
     # Finding the language and translator name from the language and translator code to use as the default value
     language_name = list(language_codes.keys())[
-        list(language_codes.values()).index(params["user lang"])
+        list(language_codes.values()).index(settings["user lang"])
     ]
     translator_name = list(translator_codes.keys())[
-        list(translator_codes.values()).index(params["translator string"])
+        list(translator_codes.values()).index(settings["translator string"])
     ]
 
     # Gradio elements
     with gr.Row():
-        activate = gr.Checkbox(value=params["activate"], label="启用翻译")
+        activate = gr.Checkbox(value=settings["activate"], label="启用翻译")
 
     with gr.Row():
         language = gr.Dropdown(
@@ -159,13 +184,13 @@ def ui():
         )
 
     # Event functions to update the parameters in the backend
-    activate.change(lambda x: params.update({"activate": x}), activate, None)
+    activate.change(lambda x: (settings.update({"activate": x}), save_settings()), activate, None)
     translator.change(update_languages, inputs=[translator], outputs=[language])
     language.change(
         lambda x: (
             new_language_code := language_codes[x],
-            params.update({"user lang": new_language_code}),
-            write_language_code(new_language_code),
+            settings.update({"user lang": new_language_code}),
+            save_settings(),
         ),
         language,
         None,
@@ -173,32 +198,8 @@ def ui():
 
 
 def update_languages(x):
-    params["translator string"] = translator_codes[x]
-    language_codes = get_languages(params["translator string"])
+    settings["translator string"] = translator_codes[x]
+    save_settings()
+    language_codes = get_languages(settings["translator string"])
     language = gr.Dropdown.update(choices=[k for k in language_codes], label="AI的语言")
     return language
-
-
-def read_language_code(
-    filename="./extensions/more_translators/setting/latest_use_language.txt",
-):
-    try:
-        with open(filename, "r") as file:
-            language_code = file.read().strip()
-        return language_code
-    except FileNotFoundError:
-        print(f"找不到{filename}。故使用默认的中文。")
-        return "zh"
-
-
-def write_language_code(
-    language_code,
-    filename="./extensions/more_translators/setting/latest_use_language.txt",
-):
-    # Check if the directory exists, if not, create it
-    directory = os.path.dirname(filename)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    with open(filename, "w") as file:
-        file.write(language_code)
