@@ -3,4 +3,4 @@ i18n lang: zh-cn
 llm lang: en
 translate mode: to-from
 translator string: alibaba
-user lang: zh
+user lang: auto

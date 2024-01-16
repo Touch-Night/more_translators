@@ -21,39 +21,48 @@ supported_language_map_data = pd.read_csv(
 # default settings
 settings = {
     "activate": True,
-    "user lang": "zh",  # todo
-    "llm lang": "en",  # todo
+    "user lang": "auto",
+    "llm lang": "en",
     "i18n lang": "zh-cn",
     "translator string": "alibaba",
-    "translate mode": "to-from",  # todo, to-from, to, from
+    "translate mode": "to-from",  # to-from, to, from
 }
 
-# Update settings from settings.yaml
+
+# Update settings from tranlators_settings.yaml
 def load_settings():
-    settings_dir = "./extensions/more_translators/settings.yaml"
+    settings_dir = "./extensions/more_translators/translators_settings.yaml"
     if os.path.exists(settings_dir):
         with open(settings_dir, "r") as file:
             settings.update(yaml.load(file, Loader=yaml.FullLoader))
     else:
         save_settings()
-        print("未找到设置文件settings.yaml，已按默认设置创建。")
+        print(read_i18n("未找到设置文件translators_settings.yaml，已按默认设置创建。"))
 
-# Save settings to settings.yaml when settings is modified
+
+# Save settings to translators_settings.yaml when settings is modified
 def save_settings():
-    settings_dir = "./extensions/more_translators/settings.yaml"
+    settings_dir = "./extensions/more_translators/translators_settings.yaml"
     # Check if the directory exists, if not, create it
     if not os.path.exists(os.path.dirname(settings_dir)):
         os.makedirs(os.path.dirname(settings_dir))
-    # Save settings to settings.yaml
+    # Save settings to translators_settings.yaml
     with open(settings_dir, "w") as file:
         yaml.dump(settings, file)
 
 
 # Translate from i18n.csv to translator_codes and language_codes
 def read_i18n(i18n_value, i18n_lang=settings["i18n lang"]):
-    if i18n_value not in i18n_data.index or i18n_lang not in i18n_data.columns:
-        return i18n_value
-    return i18n_data.loc[i18n_value, i18n_lang]
+    # if i18n_value is a list
+    if isinstance(i18n_value, list):
+        return [read_i18n(i18n_value_item, i18n_lang) for i18n_value_item in i18n_value]
+    # if i18n_value is a dict, translate only the values
+    elif isinstance(i18n_value, dict):
+        return {key: read_i18n(value, i18n_lang) for key, value in i18n_value.items()}
+    else:
+        if i18n_value not in i18n_data.index or i18n_lang not in i18n_data.columns:
+            return i18n_value
+        return i18n_data.loc[i18n_value, i18n_lang]
 
 
 def value_to_language_code(value, translator):
@@ -82,6 +91,7 @@ def get_languages(translator):
     all_languages = supported_language_map_data.dropna(subset=[translator])
     result = dict(zip(all_languages.index, all_languages[translator]))
     return result
+
 
 load_settings()
 
@@ -141,65 +151,131 @@ def modify_string(string, selected_translator, source, target):
 
 
 def input_modifier(string):
-    if not settings["activate"] or string == "":
+    if not settings["activate"] or string == "" or settings["translate mode"] == "from":
         return string
-    return modify_string(
-        string, settings["translator string"], "auto", settings["llm lang"]
-    )
+    else:
+        return modify_string(
+            string,
+            settings["translator string"],
+            settings["user lang"],
+            settings["llm lang"],
+        )
 
 
 def output_modifier(string):
-    if not settings["activate"]:
+    if not settings["activate"] or settings["translate mode"] == "to":
         return string
-    translated_str = modify_string(
-        html.unescape(string),
-        settings["translator string"],
-        settings["llm lang"],
-        settings["user lang"],
-    )
-    return translated_str
+    else:
+        return modify_string(
+            html.unescape(string),
+            settings["translator string"],
+            settings["llm lang"],
+            settings["user lang"],
+        )
 
 
 def ui():
     # Finding the language and translator name from the language and translator code to use as the default value
-    language_name = list(language_codes.keys())[
-        list(language_codes.values()).index(settings["user lang"])
-    ]
-    translator_name = list(translator_codes.keys())[
-        list(translator_codes.values()).index(settings["translator string"])
-    ]
+    try:
+        llm_lang_name = list(language_codes.keys())[
+            list(language_codes.values()).index(settings["llm lang"])
+        ]
+    except ValueError:
+        llm_lang_name = list(language_codes.keys())[0]
+    try:
+        user_lang_name = list(language_codes.keys())[
+            list(language_codes.values()).index(settings["user lang"])
+        ]
+    except ValueError:
+        user_lang_name = list(language_codes.keys())[0]
+    try:
+        translator_name = list(translator_codes.keys())[
+            list(translator_codes.values()).index(settings["translator string"])
+        ]
+    except ValueError:
+        translator_name = list(translator_codes.keys())[0]
 
     # Gradio elements
-    with gr.Row():
-        activate = gr.Checkbox(value=settings["activate"], label="启用翻译")
-
-    with gr.Row():
-        language = gr.Dropdown(
-            value=language_name, choices=[k for k in language_codes], label="AI的语言"
-        )
-
-    with gr.Row():
-        translator = gr.Dropdown(
-            value=translator_name, choices=[k for k in translator_codes], label="翻译器"
-        )
+    with gr.Group():
+        with gr.Column():
+            with gr.Row():
+                activate = gr.Checkbox(
+                    value=settings["activate"], label=read_i18n("启用翻译")
+                )
+            with gr.Row():
+                mode = gr.Radio(
+                    ["to-from", "to", "from"],
+                    label=read_i18n("翻译模式"),
+                    value="to-from",
+                )
+                i18n_lang = gr.Dropdown(
+                    value=settings["i18n lang"],
+                    choices=read_i18n(i18n_data.columns.tolist()),
+                    label=read_i18n("插件语言"),
+                )
+            with gr.Row():
+                llm_lang = gr.Dropdown(
+                    value=llm_lang_name,
+                    choices=[k for k in language_codes],
+                    label=read_i18n("LLM的语言"),
+                )
+                user_lang = gr.Dropdown(
+                    value=user_lang_name,
+                    choices=[k for k in language_codes],
+                    label=read_i18n("用户语言"),
+                )
+                translator = gr.Dropdown(
+                    value=translator_name,
+                    choices=[k for k in translator_codes],
+                    label=read_i18n("翻译器"),
+                )
 
     # Event functions to update the parameters in the backend
-    activate.change(lambda x: (settings.update({"activate": x}), save_settings()), activate, None)
-    translator.change(update_languages, inputs=[translator], outputs=[language])
-    language.change(
+    activate.change(
+        lambda x: (settings.update({"activate": x}), save_settings()), activate, None
+    )
+    mode.change(
+        lambda x: (settings.update({"translate mode": x}), save_settings()), mode, None
+    )
+    i18n_lang.change(
+        lambda x: (
+            new_language_code := x,
+            settings.update({"i18n lang": new_language_code}),
+            save_settings(),
+            gr.Info(read_i18n("重启webui后生效", new_language_code)),
+        ),
+        i18n_lang,
+        None,
+    )
+    llm_lang.change(
+        lambda x: (
+            new_language_code := language_codes[x],
+            settings.update({"llm lang": new_language_code}),
+            save_settings(),
+        ),
+        llm_lang,
+        None,
+    )
+    user_lang.change(
         lambda x: (
             new_language_code := language_codes[x],
             settings.update({"user lang": new_language_code}),
             save_settings(),
         ),
-        language,
+        user_lang,
         None,
     )
+    translator.change(update_languages, inputs=[translator], outputs=[llm_lang, user_lang])
 
 
 def update_languages(x):
     settings["translator string"] = translator_codes[x]
     save_settings()
     language_codes = get_languages(settings["translator string"])
-    language = gr.Dropdown.update(choices=[k for k in language_codes], label="AI的语言")
-    return language
+    llm_lang = gr.Dropdown.update(
+        choices=[k for k in language_codes], label=read_i18n("LLM的语言")
+    )
+    user_lang = gr.Dropdown.update(
+        choices=[k for k in language_codes], label=read_i18n("用户语言")
+    )
+    return llm_lang, user_lang
