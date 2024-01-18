@@ -22,7 +22,7 @@ reverso,Reverso,Reverso
 sogou,搜狗翻译,Sogou
 translateCom,TranslateCom,TranslatCom
 utibet,阳光藏汉双向机器翻译,Utibet
-未找到设置文件translators_settings.yaml，已按默认设置创建。,未找到设置文件translators_settings.yaml，已按默认设置创建。,"settings.yaml not found, created using default value."
+未找到设置文件translators_settings.yaml，已按默认设置创建。,未找到设置文件translators_settings.yaml，已按默认设置创建。,"translators_settings.yaml not found, created using default value."
 不支持的语言或翻译器,不支持的语言或翻译器,Language or translator not supported
 启用翻译,启用翻译,Activate
 翻译模式,翻译模式,Mode
@@ -35,7 +35,7 @@ en,英语,English
 LLM的语言,LLM的语言,LLM's language
 用户语言,用户语言,User's language
 翻译器,翻译器,Translators
-重启webui后生效,重启webui后生效,Restart webui to take effect
+刷新页面后生效,刷新页面后生效,Refresh the page to take effect
 自动,自动,auto
 阿布哈兹语,阿布哈兹语,
 亚齐语,亚齐语,
@@ -110,7 +110,7 @@ LLM的语言,LLM的语言,LLM's language
 宗喀语,宗喀语,
 埃维语,埃维语,
 现代希腊语,现代希腊语,
-英语,英语,
+en,英语,
 英语(澳大利亚),英语(澳大利亚),
 英语(英国),英语(英国),
 英语(美国),英语(美国),
@@ -367,7 +367,7 @@ LLM的语言,LLM的语言,LLM's language
 尤卡特克玛雅语,尤卡特克玛雅语,
 中文(粤语),中文(粤语),
 壮语,壮语,
-中文,中文,
+zh-cn,中文,
 中文(台湾),中文(台湾),
 中文(香港),中文(香港),
 中文(文言文),中文(文言文),

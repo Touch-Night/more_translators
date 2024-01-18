@@ -6,10 +6,12 @@ import re
 import uuid
 import pandas as pd
 import yaml
+from modules import shared
 
 i18n_data = pd.read_csv(
     "./extensions/more_translators/i18n.csv", encoding="utf-8", header=0, index_col=0
 )
+
 
 supported_language_map_data = pd.read_csv(
     "./extensions/more_translators/supported_language_map.csv",
@@ -36,8 +38,9 @@ def load_settings():
         with open(settings_dir, "r") as file:
             settings.update(yaml.load(file, Loader=yaml.FullLoader))
     else:
-        save_settings()
         print(read_i18n("未找到设置文件translators_settings.yaml，已按默认设置创建。"))
+        gr.Warning(read_i18n("未找到设置文件translators_settings.yaml，已按默认设置创建。"))
+    save_settings()
 
 
 # Save settings to translators_settings.yaml when settings is modified
@@ -52,17 +55,31 @@ def save_settings():
 
 
 # Translate from i18n.csv to translator_codes and language_codes
-def read_i18n(i18n_value, i18n_lang=settings["i18n lang"]):
-    # if i18n_value is a list
-    if isinstance(i18n_value, list):
-        return [read_i18n(i18n_value_item, i18n_lang) for i18n_value_item in i18n_value]
-    # if i18n_value is a dict, translate only the values
-    elif isinstance(i18n_value, dict):
-        return {key: read_i18n(value, i18n_lang) for key, value in i18n_value.items()}
+def read_i18n(i18n_value, i18n_lang=None, reverse=False):
+    if i18n_lang is None:
+        i18n_lang = settings["i18n lang"]
+    if not reverse:
+        # if i18n_value is a list
+        if isinstance(i18n_value, list):
+            return [
+                read_i18n(i18n_value_item, i18n_lang) for i18n_value_item in i18n_value
+            ]
+        # if i18n_value is a dict, translate only the values
+        elif isinstance(i18n_value, dict):
+            return {
+                key: read_i18n(value, i18n_lang) for key, value in i18n_value.items()
+            }
+        else:
+            if i18n_value not in i18n_data.index or i18n_lang not in i18n_data.columns:
+                return i18n_value
+            result = i18n_data.loc[i18n_value, i18n_lang]
+            final_result = result.values[0] if isinstance(result, pd.Series) else result
+            # print([i18n_value, final_result, i18n_lang])
+            return final_result
     else:
-        if i18n_value not in i18n_data.index or i18n_lang not in i18n_data.columns:
-            return i18n_value
-        return i18n_data.loc[i18n_value, i18n_lang]
+        i18n_key = i18n_data.loc[i18n_data[i18n_lang] == i18n_value]
+        value = i18n_key.index[0]
+        return value
 
 
 def value_to_language_code(value, translator):
@@ -70,6 +87,7 @@ def value_to_language_code(value, translator):
         value not in supported_language_map_data.index
         or translator not in supported_language_map_data.columns
     ):
+        print(read_i18n("不支持的语言或翻译器"))
         gr.Warning(read_i18n("不支持的语言或翻译器"))
     return supported_language_map_data.loc[value, translator]
 
@@ -93,35 +111,35 @@ def get_languages(translator):
     return result
 
 
-load_settings()
-
-translator_codes = {
-    read_i18n("alibaba"): "alibaba",
-    read_i18n("apertium"): "apertium",
-    read_i18n("argos"): "argos",
-    read_i18n("baidu"): "baidu",
-    read_i18n("bing"): "bing",
-    read_i18n("caiyun"): "caiyun",
-    read_i18n("cloudTranslation"): "cloudTranslation",
-    read_i18n("deepl"): "deepl",
-    read_i18n("elia"): "elia",
-    read_i18n("google"): "google",
-    read_i18n("iflyrec"): "iflyrec",
-    read_i18n("itranslate"): "itranslate",
-    read_i18n("languageWire"): "languageWire",
-    read_i18n("lingvanex"): "lingvanex",
-    read_i18n("mglip"): "mglip",
-    read_i18n("modernMt"): "modernMt",
-    read_i18n("papago"): "papago",
-    read_i18n("qqFanyi"): "qqFanyi",
-    read_i18n("qqTranSmart"): "qqTranSmart",
-    read_i18n("reverso"): "reverso",
-    read_i18n("sogou"): "sogou",
-    read_i18n("translateCom"): "translateCom",
-    read_i18n("utibet"): "utibet",
-}
-
-language_codes = get_languages(settings["translator string"])
+def initialize():
+    global translator_codes, language_codes
+    load_settings()
+    language_codes = get_languages(settings["translator string"])
+    translator_codes = {
+        read_i18n("alibaba"): "alibaba",
+        read_i18n("apertium"): "apertium",
+        read_i18n("argos"): "argos",
+        read_i18n("baidu"): "baidu",
+        read_i18n("bing"): "bing",
+        read_i18n("caiyun"): "caiyun",
+        read_i18n("cloudTranslation"): "cloudTranslation",
+        read_i18n("deepl"): "deepl",
+        read_i18n("elia"): "elia",
+        read_i18n("google"): "google",
+        read_i18n("iflyrec"): "iflyrec",
+        read_i18n("itranslate"): "itranslate",
+        read_i18n("languageWire"): "languageWire",
+        read_i18n("lingvanex"): "lingvanex",
+        read_i18n("mglip"): "mglip",
+        read_i18n("modernMt"): "modernMt",
+        read_i18n("papago"): "papago",
+        read_i18n("qqFanyi"): "qqFanyi",
+        read_i18n("qqTranSmart"): "qqTranSmart",
+        read_i18n("reverso"): "reverso",
+        read_i18n("sogou"): "sogou",
+        read_i18n("translateCom"): "translateCom",
+        read_i18n("utibet"): "utibet",
+    }
 
 
 def modify_string(string, selected_translator, source, target):
@@ -175,6 +193,7 @@ def output_modifier(string):
 
 
 def ui():
+    initialize()
     # Finding the language and translator name from the language and translator code to use as the default value
     try:
         llm_lang_name = list(language_codes.keys())[
@@ -204,12 +223,12 @@ def ui():
                 )
             with gr.Row():
                 mode = gr.Radio(
-                    ["to-from", "to", "from"],
+                    choices=read_i18n(["to-from", "to", "from"]),
                     label=read_i18n("翻译模式"),
-                    value="to-from",
+                    value=read_i18n("to-from"),
                 )
                 i18n_lang = gr.Dropdown(
-                    value=settings["i18n lang"],
+                    value=read_i18n(settings["i18n lang"]),
                     choices=read_i18n(i18n_data.columns.tolist()),
                     label=read_i18n("插件语言"),
                 )
@@ -235,18 +254,14 @@ def ui():
         lambda x: (settings.update({"activate": x}), save_settings()), activate, None
     )
     mode.change(
-        lambda x: (settings.update({"translate mode": x}), save_settings()), mode, None
-    )
-    i18n_lang.change(
         lambda x: (
-            new_language_code := x,
-            settings.update({"i18n lang": new_language_code}),
+            settings.update({"translate mode": read_i18n(x, reverse=True)}),
             save_settings(),
-            gr.Info(read_i18n("重启webui后生效", new_language_code)),
         ),
-        i18n_lang,
+        mode,
         None,
     )
+    i18n_lang.change(change_i18n_language, i18n_lang, None)
     llm_lang.change(
         lambda x: (
             new_language_code := language_codes[x],
@@ -265,7 +280,9 @@ def ui():
         user_lang,
         None,
     )
-    translator.change(update_languages, inputs=[translator], outputs=[llm_lang, user_lang])
+    translator.change(
+        update_languages, inputs=[translator], outputs=[llm_lang, user_lang]
+    )
 
 
 def update_languages(x):
@@ -279,3 +296,13 @@ def update_languages(x):
         choices=[k for k in language_codes], label=read_i18n("用户语言")
     )
     return llm_lang, user_lang
+
+
+def change_i18n_language(x):
+    new_language_code = read_i18n(x, reverse=True)
+    # print(new_language_code)
+    settings.update({"i18n lang": new_language_code})
+    # print(settings)
+    save_settings()
+    shared.need_restart = True
+    gr.Info(read_i18n("刷新页面后生效", new_language_code))
