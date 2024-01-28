@@ -142,33 +142,47 @@ def initialize():
     }
 
 
-def modify_string(string, selected_translator, source, target):
-    pattern = re.compile(r"```(.*?)\n(.*?)```", re.DOTALL)  # find all code blocks
+def modify_string(string, selected_translator, source, target, with_error_string=False):
+    # 使用正则表达式找到所有的代码块
+    pattern = re.compile(r"```(.*?)\n(.*?)```", re.DOTALL)
     blocks = [
         (str(uuid.uuid4()), m.group(1), m.group(2))
         for m in re.finditer(pattern, string)
     ]
-    string_without_blocks = string  # remove all code blocks
+    
+    # 替换所有的代码块为唯一的标识符
+    string_without_blocks = string
     for uuid_str, _, _ in blocks:
         string_without_blocks = re.sub(
             pattern, uuid_str, string_without_blocks, count=1
-        )  # replace all code blocks with uuid
-    translated_str = ts.translate_text(
-        html.unescape(string),
-        translator=selected_translator,
-        from_language=source,
-        to_language=target,
-    )  # translate the string without code blocks
+        )
+        
+    # 将没有代码块的字符串进行翻译
+    try:
+        translated_str = ts.translate_text(
+            html.unescape(string_without_blocks),
+            translator=selected_translator,
+            from_language=source,
+            to_language=target,
+        )
+    except Exception as e:
+        print(e)
+        gr.Warning(read_i18n("翻译失败，展示原文"))
+        if with_error_string:
+            return read_i18n("翻译失败，展示原文") + "\n" + string
+        else:
+            return string
+    
+    # 将唯一标识符替换回原来的代码块
     for uuid_str, lang, block in blocks:
-        # Remove leading and trailing whitespaces from each block
         block = block.strip()
         translated_str = translated_str.replace(
             uuid_str, "```" + lang + "\n" + block + "\n```"
-        )  # replace the uuid with the translated code block
+        )
     return translated_str
 
 
-def input_modifier(string):
+def input_modifier(string, is_chat=True):
     if not settings["activate"] or string == "" or settings["translate mode"] == "from":
         return string
     else:
@@ -180,7 +194,7 @@ def input_modifier(string):
         )
 
 
-def output_modifier(string):
+def output_modifier(string, is_chat=True):
     if not settings["activate"] or settings["translate mode"] == "to":
         return string
     else:
@@ -189,6 +203,7 @@ def output_modifier(string):
             settings["translator string"],
             settings["llm lang"],
             settings["user lang"],
+            with_error_string=True,
         )
 
 
