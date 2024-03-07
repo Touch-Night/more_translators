@@ -26,9 +26,9 @@ utibet,阳光藏汉双向机器翻译,Utibet
 不支持的语言或翻译器,不支持的语言或翻译器,Language or translator not supported
 启用翻译,启用翻译,Activate
 翻译模式,翻译模式,Mode
-to-from,双向,⮃
-to,仅输入,⭡
-from,仅输出,⭣
+to-from,双向,to-from
+to,仅输入,to
+from,仅输出,from
 插件语言,插件语言,Plugin's language
 zh-cn,中文,Chinese
 en,英语,English

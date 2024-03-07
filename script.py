@@ -613,27 +613,32 @@ def ui():
                     choices=read_i18n(["to-from", "to", "from"]),
                     label=read_i18n("翻译模式"),
                     value=read_i18n("to-from"),
+                    min_width=1,
                 )
                 i18n_lang = gr.Dropdown(
                     value=read_i18n(settings["i18n lang"]),
                     choices=read_i18n(i18n_data.columns.tolist()),
                     label=read_i18n("插件语言"),
+                    min_width=1,
                 )
             with gr.Row():
                 llm_lang = gr.Dropdown(
                     value=llm_lang_name,
                     choices=[k for k in language_codes],
                     label=read_i18n("LLM的语言"),
+                    min_width=1,
                 )
                 user_lang = gr.Dropdown(
                     value=user_lang_name,
                     choices=[k for k in language_codes],
                     label=read_i18n("用户语言"),
+                    min_width=1,
                 )
                 translator = gr.Dropdown(
                     value=translator_name,
                     choices=[k for k in translator_codes],
                     label=read_i18n("翻译器"),
+                    min_width=1,
                 )
 
     # Event functions to update the parameters in the backend
