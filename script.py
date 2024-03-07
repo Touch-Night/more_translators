@@ -9,6 +9,7 @@ from io import StringIO
 from cgitb import text
 from modules import shared
 
+
 i18n_data = pd.read_csv(
     "./extensions/more_translators/i18n.csv", encoding="utf-8", header=0, index_col=0
 )
@@ -35,7 +36,7 @@ settings = {
 Copied from https://github.com/CrazyMayfly/Free-Markdown-Translator
 """
 
-compact_langs = ['中文(台湾)', '中文(香港)', '中文(文言文)', '日语']
+compact_langs = ["中文(台湾)", "中文(香港)", "中文(文言文)", "日语"]
 # 指定要跳过翻译的字符的正则表达式，分别为加粗符号、在``中的非中文字符，`，用于过滤表格的符号，换行符
 skipped_regexs = [
     r"\*\*。?",
@@ -256,7 +257,9 @@ def load_settings():
             settings.update(yaml.load(file, Loader=yaml.FullLoader))
     else:
         print(read_i18n("未找到设置文件translators_settings.yaml，已按默认设置创建。"))
-        gr.Warning(read_i18n("未找到设置文件translators_settings.yaml，已按默认设置创建。"))
+        gr.Warning(
+            read_i18n("未找到设置文件translators_settings.yaml，已按默认设置创建。")
+        )
     save_settings()
 
 
@@ -297,6 +300,12 @@ def read_i18n(i18n_value, i18n_lang=None, reverse=False):
         i18n_key = i18n_data.loc[i18n_data[i18n_lang] == i18n_value]
         value = i18n_key.index[0]
         return value
+
+
+params = {
+    "display_name": read_i18n("LLM翻译"),
+    "is_tab": True,
+}
 
 
 def value_to_language_code(value, translator):
@@ -524,7 +533,10 @@ def modify_string(string, selected_translator, source, target, with_error_string
     # 预处理
     string_io = StringIO(string)
     string_lines = string_io.readlines()
-    if language_code_to_value(source, selected_translator) != "中文(台湾)" or "中文(香港)":
+    if (
+        language_code_to_value(source, selected_translator) != "中文(台湾)"
+        or "中文(香港)"
+    ):
         string_lines_tmp = []
         for line in string_lines:
             line = line.replace("。", ". ").replace("，", ",")
@@ -532,11 +544,11 @@ def modify_string(string, selected_translator, source, target, with_error_string
         string_lines = string_lines_tmp
     string_lines.append("\n")
     final_md_text = translate_lines(string_lines, selected_translator, source, target)
-    final_markdown = ''
+    final_markdown = ""
     for line in final_md_text.splitlines():
         if language_code_to_value(target, selected_translator) not in compact_langs:
             parts = re.split(expands_pattern, line)
-            line = ''
+            line = ""
             for position, part in enumerate(parts):
                 if not part or len(part) == 0:
                     continue
@@ -581,6 +593,13 @@ def output_modifier(string, is_chat=True):
 
 def ui():
     initialize()
+    if params["is_tab"]:
+        tab_ui()
+    else:
+        block_ui()
+
+
+def block_ui():
     # Finding the language and translator name from the language and translator code to use as the default value
     try:
         llm_lang_name = list(language_codes.keys())[
@@ -675,6 +694,12 @@ def ui():
     translator.change(
         update_languages, inputs=[translator], outputs=[llm_lang, user_lang]
     )
+    params["is_tab"] = True
+
+
+def tab_ui():
+    gr.Button("WIP")
+    params["is_tab"] = False
 
 
 def update_languages(x):
