@@ -22,15 +22,6 @@ supported_language_map_data = pd.read_csv(
     index_col=0,
 )
 
-# default settings
-settings = {
-    "activate": True,
-    "user lang": "auto",
-    "llm lang": "en",
-    "i18n lang": "zh-cn",
-    "translator string": "alibaba",
-    "translate mode": "to-from",  # to-from, to, from
-}
 
 """
 Copied from https://github.com/CrazyMayfly/Free-Markdown-Translator
@@ -249,33 +240,45 @@ class KeyValueArrayNode(Node):
         return self.index + '{} ["{}"]'.format(self.signs, '", "'.join(items)) + "\n"
 
 
-# Update settings from tranlators_settings.yaml
-def load_settings():
-    settings_dir = "./extensions/more_translators/translators_settings.yaml"
-    if os.path.exists(settings_dir):
-        with open(settings_dir, "r") as file:
-            settings.update(yaml.load(file, Loader=yaml.FullLoader))
-    else:
-        print(read_i18n("未找到设置文件translators_settings.yaml，已按默认设置创建。"))
-        gr.Warning(
-            read_i18n("未找到设置文件translators_settings.yaml，已按默认设置创建。")
-        )
-    save_settings()
-
-
 # Save settings to translators_settings.yaml when settings is modified
-def save_settings():
+def save_settings(settings_dict):
     settings_dir = "./extensions/more_translators/translators_settings.yaml"
     # Check if the directory exists, if not, create it
     if not os.path.exists(os.path.dirname(settings_dir)):
         os.makedirs(os.path.dirname(settings_dir))
     # Save settings to translators_settings.yaml
     with open(settings_dir, "w") as file:
-        yaml.dump(settings, file)
+        yaml.dump(settings_dict, file)
+
+
+# Update settings from tranlators_settings.yaml
+def load_settings():
+    default_settings = {
+        "activate": True,
+        "user lang": "auto",
+        "llm lang": "en",
+        "i18n lang": "zh-cn",
+        "translator string": "alibaba",
+        "translate mode": "to-from",  # to-from, to, from
+    }
+    settings_dir = "./extensions/more_translators/translators_settings.yaml"
+    if os.path.exists(settings_dir):
+        with open(settings_dir, "r") as file:
+            default_settings.update(yaml.load(file, Loader=yaml.FullLoader))
+    else:
+        print(read_i18n("未找到设置文件translators_settings.yaml，已按默认设置创建。"))
+        gr.Warning(
+            read_i18n("未找到设置文件translators_settings.yaml，已按默认设置创建。")
+        )
+    save_settings(default_settings)
+    return default_settings
+
+
+settings = load_settings()
 
 
 # Translate from i18n.csv to translator_codes and language_codes
-def read_i18n(i18n_value, i18n_lang=None, reverse=False):
+def read_i18n(i18n_value, i18n_lang=None, reverse=False, dict_mode="value"):
     if i18n_lang is None:
         i18n_lang = settings["i18n lang"]
     if not reverse:
@@ -286,9 +289,16 @@ def read_i18n(i18n_value, i18n_lang=None, reverse=False):
             ]
         # if i18n_value is a dict, translate only the values
         elif isinstance(i18n_value, dict):
-            return {
-                key: read_i18n(value, i18n_lang) for key, value in i18n_value.items()
-            }
+            if dict_mode == "key":
+                return {
+                    read_i18n(key, i18n_lang): value
+                    for key, value in i18n_value.items()
+                }
+            else:
+                return {
+                    key: read_i18n(value, i18n_lang)
+                    for key, value in i18n_value.items()
+                }
         else:
             if i18n_value not in i18n_data.index or i18n_lang not in i18n_data.columns:
                 return i18n_value
@@ -303,7 +313,7 @@ def read_i18n(i18n_value, i18n_lang=None, reverse=False):
 
 
 params = {
-    "display_name": read_i18n("LLM翻译"),
+    "display_name": read_i18n("LLM翻译", settings["i18n lang"]),
     "is_tab": True,
 }
 
@@ -340,7 +350,10 @@ def get_languages(translator):
 def initialize():
     global translator_codes, language_codes
     load_settings()
-    language_codes = get_languages(settings["translator string"])
+    language_codes = read_i18n(
+        get_languages(settings["translator string"]), dict_mode="key"
+    )
+    # print(language_codes)
     translator_codes = {
         read_i18n("alibaba"): "alibaba",
         read_i18n("apertium"): "apertium",
@@ -662,35 +675,21 @@ def block_ui():
 
     # Event functions to update the parameters in the backend
     activate.change(
-        lambda x: (settings.update({"activate": x}), save_settings()), activate, None
+        lambda x: (settings.update({"activate": x}), save_settings(settings)),
+        activate,
+        None,
     )
     mode.change(
         lambda x: (
             settings.update({"translate mode": read_i18n(x, reverse=True)}),
-            save_settings(),
+            save_settings(settings),
         ),
         mode,
         None,
     )
     i18n_lang.change(change_i18n_language, i18n_lang, None)
-    llm_lang.change(
-        lambda x: (
-            new_language_code := language_codes[x],
-            settings.update({"llm lang": new_language_code}),
-            save_settings(),
-        ),
-        llm_lang,
-        None,
-    )
-    user_lang.change(
-        lambda x: (
-            new_language_code := language_codes[x],
-            settings.update({"user lang": new_language_code}),
-            save_settings(),
-        ),
-        user_lang,
-        None,
-    )
+    llm_lang.change(change_llm_lang, llm_lang, None)
+    user_lang.change(change_user_lang, user_lang, None)
     translator.change(
         update_languages, inputs=[translator], outputs=[llm_lang, user_lang]
     )
@@ -704,7 +703,7 @@ def tab_ui():
 
 def update_languages(x):
     settings["translator string"] = translator_codes[x]
-    save_settings()
+    save_settings(settings)
     language_codes = get_languages(settings["translator string"])
     llm_lang = gr.Dropdown.update(
         choices=[k for k in language_codes], label=read_i18n("LLM的语言")
@@ -720,6 +719,21 @@ def change_i18n_language(x):
     # print(new_language_code)
     settings.update({"i18n lang": new_language_code})
     # print(settings)
-    save_settings()
+    save_settings(settings)
     shared.need_restart = True
+    params.update({"display_name": read_i18n("LLM翻译")})
     gr.Info(read_i18n("刷新页面后生效", new_language_code))
+
+
+def change_llm_lang(x):
+    # print(x)
+    # print(read_i18n(x,reverse=True))
+    new_language_code = language_codes[x]
+    settings.update({"llm lang": new_language_code})
+    save_settings(settings)
+
+
+def change_user_lang(x):
+    new_language_code = language_codes[x]
+    settings.update({"user lang": new_language_code})
+    save_settings(settings)

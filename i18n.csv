@@ -30,8 +30,8 @@ to-from,双向,to-from
 to,仅输入,to
 from,仅输出,from
 插件语言,插件语言,Plugin's language
-zh-cn,中文,Chinese
-en,英语,English
+zh-cn,汉语,zh-cn
+en,英文,en
 LLM的语言,LLM的语言,LLM's language
 用户语言,用户语言,User's language
 翻译器,翻译器,Translators
@@ -112,7 +112,7 @@ LLM翻译,LLM翻译,LLM Translate
 宗喀语,宗喀语,Zongkha
 埃维语,埃维语,Ewe
 现代希腊语,现代希腊语,Modern Greek
-en,英语,English
+英语,英语,English
 英语(澳大利亚),英语(澳大利亚),English (Australia)
 英语(英国),英语(英国),English (United Kingdom)
 英语(美国),英语(美国),English (United States)
@@ -369,7 +369,7 @@ en,英语,English
 尤卡特克玛雅语,尤卡特克玛雅语,Yucatec Maya
 中文(粤语),中文(粤语),Chinese (Cantonese)
 壮语,壮语,Zhuang
-zh-cn,中文,Chinese
+中文,中文,Chinese
 中文(台湾),中文(台湾),Chinese (Taiwan)
 中文(香港),中文(香港),Chinese (Hong Kong)
 中文(文言文),中文(文言文),Chinese (Classical)
