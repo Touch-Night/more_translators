@@ -233,7 +233,7 @@ class KeyValueArrayNode(Node):
             self.value = "\n".join(items)
             self.trans_lines = len(items)
         else:
-            print("Wrong format with MdTransItemKeyValueArray:", text)
+            print(read_i18n("MdTransItemKeyValueArray格式错误: "), text)
 
     def compose(self):
         items = self.value.split("\n")
@@ -313,7 +313,7 @@ def read_i18n(i18n_value, i18n_lang=None, reverse=False, dict_mode="value"):
 
 
 params = {
-    "display_name": read_i18n("LLM翻译", settings["i18n lang"]),
+    "display_name": read_i18n("猫翻", settings["i18n lang"]),
     "is_tab": True,
 }
 
@@ -606,13 +606,6 @@ def output_modifier(string, is_chat=True):
 
 def ui():
     initialize()
-    if params["is_tab"]:
-        tab_ui()
-    else:
-        block_ui()
-
-
-def block_ui():
     # Finding the language and translator name from the language and translator code to use as the default value
     try:
         llm_lang_name = list(language_codes.keys())[
@@ -693,12 +686,6 @@ def block_ui():
     translator.change(
         update_languages, inputs=[translator], outputs=[llm_lang, user_lang]
     )
-    params["is_tab"] = True
-
-
-def tab_ui():
-    gr.Button("WIP")
-    params["is_tab"] = False
 
 
 def update_languages(x):
