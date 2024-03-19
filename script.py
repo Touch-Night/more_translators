@@ -314,7 +314,7 @@ def read_i18n(i18n_value, i18n_lang=None, reverse=False, dict_mode="value"):
 
 params = {
     "display_name": read_i18n("猫翻", settings["i18n lang"]),
-    "is_tab": True,
+    "is_tab": False,
 }
 
 
