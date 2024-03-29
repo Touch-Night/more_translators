@@ -604,63 +604,57 @@ def output_modifier(string, is_chat=True):
         )
 
 
+def get_name_from_code(code, setting):
+    try:
+        name = list(code.keys())[list(code.values()).index(setting)]
+    except ValueError:
+        name = list(code.keys())[0]
+    return name
+
+
 def ui():
     initialize()
-    # Finding the language and translator name from the language and translator code to use as the default value
-    try:
-        llm_lang_name = list(language_codes.keys())[
-            list(language_codes.values()).index(settings["llm lang"])
-        ]
-    except ValueError:
-        llm_lang_name = list(language_codes.keys())[0]
-    try:
-        user_lang_name = list(language_codes.keys())[
-            list(language_codes.values()).index(settings["user lang"])
-        ]
-    except ValueError:
-        user_lang_name = list(language_codes.keys())[0]
-    try:
-        translator_name = list(translator_codes.keys())[
-            list(translator_codes.values()).index(settings["translator string"])
-        ]
-    except ValueError:
-        translator_name = list(translator_codes.keys())[0]
-
     # Gradio elements
     with gr.Group():
         with gr.Column():
             with gr.Row():
                 activate = gr.Checkbox(
-                    value=settings["activate"], label=read_i18n("启用翻译")
+                    value=lambda: settings["activate"], label=read_i18n("启用翻译")
                 )
             with gr.Row():
                 mode = gr.Radio(
                     choices=read_i18n(["to-from", "to", "from"]),
                     label=read_i18n("翻译模式"),
-                    value=read_i18n("to-from"),
+                    value=lambda: read_i18n(settings["translate mode"]),
                     min_width=1,
                 )
                 i18n_lang = gr.Dropdown(
-                    value=read_i18n(settings["i18n lang"]),
+                    value=lambda: read_i18n(settings["i18n lang"]),
                     choices=read_i18n(i18n_data.columns.tolist()),
                     label=read_i18n("插件语言"),
                     min_width=1,
                 )
             with gr.Row():
                 llm_lang = gr.Dropdown(
-                    value=llm_lang_name,
+                    value=lambda: get_name_from_code(
+                        language_codes, settings["llm lang"]
+                    ),
                     choices=[k for k in language_codes],
                     label=read_i18n("LLM的语言"),
                     min_width=1,
                 )
                 user_lang = gr.Dropdown(
-                    value=user_lang_name,
+                    value=lambda: get_name_from_code(
+                        language_codes, settings["user lang"]
+                    ),
                     choices=[k for k in language_codes],
                     label=read_i18n("用户语言"),
                     min_width=1,
                 )
                 translator = gr.Dropdown(
-                    value=translator_name,
+                    value=lambda: get_name_from_code(
+                        translator_codes, settings["translator string"]
+                    ),
                     choices=[k for k in translator_codes],
                     label=read_i18n("翻译器"),
                     min_width=1,
