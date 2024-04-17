@@ -251,32 +251,6 @@ def save_settings(settings_dict):
         yaml.dump(settings_dict, file)
 
 
-# Update settings from tranlators_settings.yaml
-def load_settings():
-    default_settings = {
-        "activate": True,
-        "user lang": "auto",
-        "llm lang": "en",
-        "i18n lang": "zh-cn",
-        "translator string": "alibaba",
-        "translate mode": "to-from",  # to-from, to, from
-    }
-    settings_dir = "./extensions/more_translators/translators_settings.yaml"
-    if os.path.exists(settings_dir):
-        with open(settings_dir, "r") as file:
-            default_settings.update(yaml.load(file, Loader=yaml.FullLoader))
-    else:
-        print(read_i18n("未找到设置文件translators_settings.yaml，已按默认设置创建。"))
-        gr.Warning(
-            read_i18n("未找到设置文件translators_settings.yaml，已按默认设置创建。")
-        )
-    save_settings(default_settings)
-    return default_settings
-
-
-settings = load_settings()
-
-
 # Translate from i18n.csv to translator_codes and language_codes
 def read_i18n(i18n_value, i18n_lang=None, reverse=False, dict_mode="value"):
     if i18n_lang is None:
@@ -312,6 +286,30 @@ def read_i18n(i18n_value, i18n_lang=None, reverse=False, dict_mode="value"):
         return value
 
 
+# Update settings from tranlators_settings.yaml
+def load_settings():
+    default_settings = {
+        "activate": True,
+        "user lang": "auto",
+        "llm lang": "en",
+        "i18n lang": "zh-cn",
+        "translator string": "alibaba",
+        "translate mode": "to-from",  # to-from, to, from
+    }
+    settings_dir = "./extensions/more_translators/translators_settings.yaml"
+    if os.path.exists(settings_dir):
+        with open(settings_dir, "r") as file:
+            default_settings.update(yaml.load(file, Loader=yaml.FullLoader))
+    else:
+        print(read_i18n("未找到设置文件translators_settings.yaml，已按默认设置创建。", default_settings["i18n lang"]))
+        gr.Warning(
+            read_i18n("未找到设置文件translators_settings.yaml，已按默认设置创建。", default_settings["i18n lang"])
+        )
+    save_settings(default_settings)
+    return default_settings
+
+
+settings = load_settings()
 params = {
     "display_name": read_i18n("猫翻", settings["i18n lang"]),
     "is_tab": False,
@@ -631,7 +629,7 @@ def ui():
                 i18n_lang = gr.Dropdown(
                     value=lambda: read_i18n(settings["i18n lang"]),
                     choices=read_i18n(i18n_data.columns.tolist()),
-                    label=read_i18n("插件语言"),
+                    label=read_i18n("扩展语言"),
                     min_width=1,
                 )
             with gr.Row():
